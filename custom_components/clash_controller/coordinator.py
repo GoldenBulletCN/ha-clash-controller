@@ -1,8 +1,8 @@
 """Data coordinator for Clash Controller."""
 
 from datetime import timedelta
-from typing import Any, Optional
 import logging
+from typing import Any, Optional
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_SCAN_INTERVAL
@@ -10,17 +10,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import ClashAPI, SERVICE_TABLE
+from .api import SERVICE_TABLE, ClashAPI
 from .const import (
-    DOMAIN,
-    DEFAULT_SCAN_INTERVAL,
-    DEFAULT_CONCURRENT_CONNECTIONS,
-    DEFAULT_STREAMING_DETECTION,
     CONF_CONCURRENT_CONNECTIONS,
-    CONF_STREAMING_DETECTION,
+    DEFAULT_CONCURRENT_CONNECTIONS,
+    DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class ClashControllerCoordinator(DataUpdateCoordinator):
     """A coordinator to fetch data from the Clash API."""
@@ -28,9 +27,7 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
     device: Optional[DeviceInfo] = None
 
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
-        """
-        Initialize the Clash Controller coordinator.
-        """
+        """Initialize the Clash Controller coordinator."""
         self.host = config_entry.data["api_url"]
         self.token = config_entry.data["bearer_token"]
         self.allow_unsafe = config_entry.data["allow_unsafe"]
@@ -41,9 +38,6 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
         self.concurrent_connections = config_entry.options.get(
             CONF_CONCURRENT_CONNECTIONS, DEFAULT_CONCURRENT_CONNECTIONS
         )
-        self.streaming_detection = config_entry.options.get(
-            CONF_STREAMING_DETECTION, DEFAULT_STREAMING_DETECTION
-        )
 
         super().__init__(
             hass,
@@ -53,37 +47,35 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=self.poll_interval),
         )
 
-        self.api = ClashAPI(host=self.host, token=self.token, allow_unsafe=self.allow_unsafe)
+        self.api = ClashAPI(
+            host=self.host, token=self.token, allow_unsafe=self.allow_unsafe
+        )
         _LOGGER.debug(f"Clash API initialized for coordinator {self.name}")
 
     async def _get_device(self) -> DeviceInfo:
-        """
-        Generate a device object.
-        """
+        """Generate a device object."""
         version_info = await self.api.get_version()
         return DeviceInfo(
-            name = "Clash Instance",
-            manufacturer = "Clash",
-            model = version_info.get("meta"),
-            sw_version = version_info.get("version"),
-            identifiers = {(DOMAIN, self.api.device_id)},
+            name="Clash Instance",
+            manufacturer="Clash",
+            model=version_info.get("meta"),
+            sw_version=version_info.get("version"),
+            identifiers={(DOMAIN, self.api.device_id)},
         )
 
     async def _async_update_data(self):
-        """
-        Fetch data from API endpoint.
-        """
+        """Fetch data from API endpoint."""
         response: dict[str, Any] = {}
         is_connected = False
-        _LOGGER.debug("Start fetching data from Clash.")
+        _LOGGER.debug("Start fetching data from Clash")
 
         try:
             is_connected = await self.api.connected(suppress_errors=False)
         except Exception as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
-        
+
         if is_connected:
-            response = await self.api.fetch_data(streaming_detection=self.streaming_detection)
+            response = await self.api.fetch_data()
             if not self.device:
                 self.device = await self._get_device()
 
@@ -141,50 +133,41 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
                 "entity_type": "fakeip_flush_button",
                 "icon": "mdi:broom",
                 "translation_key": "flush_cache",
-                "action":{
+                "action": {
                     "method": self.api.async_request,
-                    "args": ("POST", "cache/fakeip/flush")
-                }
-            }
+                    "args": ("POST", "cache/fakeip/flush"),
+                },
+            },
         ]
         group_selector_items = ["tfo", "type", "udp", "xudp", "alive", "history"]
         group_sensor_items = group_selector_items + ["all"]
 
         for item in proxies.get("proxies", {}).values():
             if item.get("type") in ["Selector", "Fallback"]:
-                entity_data.append({
-                    "name": item.get("name"),
-                    "state": item.get("now"),
-                    "entity_type": "proxy_group_selector",
-                    "icon": "mdi:network-outline",
-                    "options": item.get("all"),
-                    "attributes": {k: item[k] for k in group_selector_items if k in item},
-                })
+                entity_data.append(
+                    {
+                        "name": item.get("name"),
+                        "state": item.get("now"),
+                        "entity_type": "proxy_group_selector",
+                        "icon": "mdi:network-outline",
+                        "options": item.get("all"),
+                        "attributes": {
+                            k: item[k] for k in group_selector_items if k in item
+                        },
+                    }
+                )
             elif item.get("type") == "URLTest":
-                entity_data.append({
-                    "name": item.get("name"),
-                    "state": item.get("now"),
-                    "entity_type": "proxy_group_sensor",
-                    "icon": "mdi:network-outline",
-                    "attributes": {k: item[k] for k in group_sensor_items if k in item},
-                })
-
-        if self.streaming_detection:
-            for service, details in streaming.items():
-
-                service_info = SERVICE_TABLE.get(service)
-                code_stable = service_info.get("code_table", {})
-                code = details.get("status_code", 000)
-
-                entity_data.append({
-                    "name": service_info.get("name","Unknown Service"),
-                    "state": code_stable.get(code, "unknown"),
-                    "icon": service_info.get("icon", "mdi:play"),
-                    "attributes": details,
-                    "options": [status for _, status in code_stable.items()] + ["unknown"],
-                    "entity_type": "streaming_detection",
-                    "translation_key": service + "_service",
-                })
+                entity_data.append(
+                    {
+                        "name": item.get("name"),
+                        "state": item.get("now"),
+                        "entity_type": "proxy_group_sensor",
+                        "icon": "mdi:network-outline",
+                        "attributes": {
+                            k: item[k] for k in group_sensor_items if k in item
+                        },
+                    }
+                )
 
         for item in entity_data:
             item["unique_id"] = (
@@ -194,9 +177,7 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
             )
 
         return entity_data
-    
+
     def get_data_by_name(self, name: str) -> dict | None:
-        """
-        Retrieve data by name.
-        """
+        """Retrieve data by name."""
         return next((item for item in self.data if item["name"] == name), None)
