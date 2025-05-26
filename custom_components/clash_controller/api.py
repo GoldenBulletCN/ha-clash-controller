@@ -78,10 +78,10 @@ class ClashAPI:
             await self._establish_session()
 
         url = f"{self.host}{endpoint}"
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-        }
+        headers = {"Content-Type": "application/json"}
+
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
 
         _LOGGER.debug(f"Making {method} request to {url}, read line: {read_line}.")
 

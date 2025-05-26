@@ -13,13 +13,15 @@ from .coordinator import ClashControllerCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):
-
-    coordinator: ClashControllerCoordinator = hass.data[DOMAIN][config_entry.entry_id].coordinator
+    coordinator: ClashControllerCoordinator = hass.data[DOMAIN][
+        config_entry.entry_id
+    ].coordinator
 
     button_types = {
         "fakeip_flush_button": ButtonEntityBase,
@@ -33,10 +35,13 @@ async def async_setup_entry(
 
     async_add_entities(buttons)
 
+
 class ButtonEntityBase(BaseEntity, ButtonEntity):
     """Base button entity class."""
 
-    def __init__(self, coordinator: ClashControllerCoordinator, entity_data: dict) -> None:
+    def __init__(
+        self, coordinator: ClashControllerCoordinator, entity_data: dict
+    ) -> None:
         super().__init__(coordinator, entity_data)
 
     async def async_press(self) -> None:

@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .api import SERVICE_TABLE, ClashAPI
+from .api import ClashAPI
 from .const import (
     CONF_CONCURRENT_CONNECTIONS,
     DEFAULT_CONCURRENT_CONNECTIONS,
@@ -83,7 +83,6 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
         connections = response.get("connections", {})
         memory = response.get("memory", {})
         proxies = response.get("proxies", {})
-        streaming = response.get("streaming", {})
 
         entity_data = [
             {

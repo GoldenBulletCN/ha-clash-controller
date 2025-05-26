@@ -20,10 +20,11 @@ from .services import ClashServicesSetup
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
-    Platform.SELECT,
     Platform.BUTTON,
+    Platform.SELECT,
+    Platform.SENSOR,
 ]
+
 
 @dataclass
 class RuntimeData:
@@ -41,7 +42,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     await coordinator.async_config_entry_first_refresh()
 
     if not await coordinator.api.connected():
-        _LOGGER.error("API not connected when setting up the entry.")
+        _LOGGER.error("API not connected when setting up the entry")
         raise ConfigEntryNotReady
 
     cancel_update_listener = config_entry.add_update_listener(_async_update_listener)
@@ -60,7 +61,8 @@ async def _async_update_listener(hass: HomeAssistant, config_entry):
 
 
 async def async_remove_config_entry_device(
-    hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry) -> bool:
+    hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
+) -> bool:
     """Handle entry removal."""
 
     return True
@@ -68,7 +70,7 @@ async def async_remove_config_entry_device(
 
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    
+
     for service in hass.services.async_services_for_domain(DOMAIN):
         hass.services.async_remove(DOMAIN, service)
     hass.data[DOMAIN][config_entry.entry_id].cancel_update_listener()

@@ -2,23 +2,23 @@
 
 import asyncio
 import json
+
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_DEVICE_ID
 from homeassistant.core import HomeAssistant, ServiceCall, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import config_validation as cv, device_registry as dr
 
 from .const import (
+    API_CALL_SERVICE_NAME,
+    DNS_QUERY_SERVICE_NAME,
     DOMAIN,
-    REBOOT_CORE_SERVICE_NAME,
     FILTER_CONNECTION_SERVICE_NAME,
     GET_LATENCY_SERVICE_NAME,
-    DNS_QUERY_SERVICE_NAME,
     GET_RULE_SERVICE_NAME,
-    API_CALL_SERVICE_NAME,
+    REBOOT_CORE_SERVICE_NAME,
 )
 from .coordinator import ClashControllerCoordinator
 
@@ -99,13 +99,16 @@ API_CALL_SCHEMA = vol.Schema(
     }
 )
 
+
 class ClashServicesSetup:
     """Class to handle Integration Services."""
 
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
         self.hass = hass
         self.config_entry = config_entry
-        self.coordinator: ClashControllerCoordinator = hass.data[DOMAIN][config_entry.entry_id].coordinator
+        self.coordinator: ClashControllerCoordinator = hass.data[DOMAIN][
+            config_entry.entry_id
+        ].coordinator
         self.setup_services()
 
     def setup_services(self):
@@ -114,7 +117,7 @@ class ClashServicesSetup:
             DOMAIN,
             REBOOT_CORE_SERVICE_NAME,
             self.async_reboot_core_service,
-            schema=REBOOT_CORE_SERVICE_SCHEMA
+            schema=REBOOT_CORE_SERVICE_SCHEMA,
         )
         self.hass.services.async_register(
             DOMAIN,
@@ -166,9 +169,11 @@ class ClashServicesSetup:
         """Execute service call for rebooting core."""
 
         coordinator = self._get_coordinator(service_call.data[CONF_DEVICE_ID])
-        
+
         try:
-            await coordinator.api.async_request("POST", "restart", suppress_errors=False)
+            await coordinator.api.async_request(
+                "POST", "restart", suppress_errors=False
+            )
         except Exception as err:
             raise HomeAssistantError(f"Error rebooting core: {err}") from err
 
@@ -179,7 +184,11 @@ class ClashServicesSetup:
 
         def parse_filter(key):
             value_str = service_call.data.get(key)
-            return {item.strip() for item in value_str.split(",") if item.strip()} if value_str else None
+            return (
+                {item.strip() for item in value_str.split(",") if item.strip()}
+                if value_str
+                else None
+            )
 
         def filter_connection(conn):
             meta = conn.get("metadata", {})
@@ -204,7 +213,9 @@ class ClashServicesSetup:
         close_connection = service_call.data.get(CLOSE_CONNECTION, False)
 
         try:
-            response = await coordinator.api.async_request("GET", "connections", suppress_errors=False)
+            response = await coordinator.api.async_request(
+                "GET", "connections", suppress_errors=False
+            )
         except Exception as err:
             raise HomeAssistantError(f"Error getting connections: {err}") from err
 
@@ -223,9 +234,9 @@ class ClashServicesSetup:
         try:
             if hosts or src_hosts or des_hosts:
                 semaphore = asyncio.Semaphore(coordinator.concurrent_connections)
-                await asyncio.gather(*[
-                    delete_connection(conn["id"]) for conn in filtered_connections
-                ])
+                await asyncio.gather(
+                    *[delete_connection(conn["id"]) for conn in filtered_connections]
+                )
             else:
                 await coordinator.api.async_request("DELETE", "connections")
         except Exception as err:
@@ -240,31 +251,30 @@ class ClashServicesSetup:
 
         def sort_group(data: dict) -> dict:
             if not data:
-                return {"fastest_node": None,"latency": []}
+                return {"fastest_node": None, "latency": []}
             sorted_items = sorted(data.items(), key=lambda x: x[1])
-            return {
-                "fastest_node": sorted_items[0][0],
-                "latency": sorted_items
-            }
-        
+            return {"fastest_node": sorted_items[0][0], "latency": sorted_items}
+
         group = service_call.data.get(GROUP_NAME, "").strip()
         node = service_call.data.get(NODE_NAME, "").strip()
         url = service_call.data.get(TEST_URL, "http://www.gstatic.cn/generate_204")
         timeout = service_call.data.get(TEST_TIMEOUT, 5000)
-        
+
         if bool(group) ^ bool(node) is False:
-            raise HomeAssistantError("Exactly one of the group or node should be provided.")
+            raise HomeAssistantError(
+                "Exactly one of the group or node should be provided."
+            )
 
         try:
             response = await coordinator.api.async_request(
                 method="GET",
                 endpoint=f"group/{group}/delay" if group else f"proxies/{node}/delay",
-                params={"url": url,"timeout": timeout},
-                suppress_errors=False
+                params={"url": url, "timeout": timeout},
+                suppress_errors=False,
             )
         except Exception as err:
             raise HomeAssistantError(f"Error getting latency: {err}") from err
-        
+
         if group:
             return sort_group(response)
         else:
@@ -282,8 +292,8 @@ class ClashServicesSetup:
             return await coordinator.api.async_request(
                 method="GET",
                 endpoint="dns/query",
-                params={"name": domain_name,"type": record_type},
-                suppress_errors=False
+                params={"name": domain_name, "type": record_type},
+                suppress_errors=False,
             )
         except Exception as err:
             raise HomeAssistantError(f"Error performing DNS query: {err}") from err
@@ -295,7 +305,11 @@ class ClashServicesSetup:
 
         def parse_filter(key):
             value_str = service_call.data.get(key)
-            return {item.strip() for item in value_str.split(",") if item.strip()} if value_str else None
+            return (
+                {item.strip() for item in value_str.split(",") if item.strip()}
+                if value_str
+                else None
+            )
 
         def filter_rule(rule):
             rule_type = rule.get("type", "").lower()
@@ -314,7 +328,9 @@ class ClashServicesSetup:
         rule_proxys = parse_filter(RULE_PROXY)
 
         try:
-            response = await coordinator.api.async_request(method="GET",endpoint="rules",suppress_errors=False)
+            response = await coordinator.api.async_request(
+                method="GET", endpoint="rules", suppress_errors=False
+            )
         except Exception as err:
             raise HomeAssistantError(f"Error getting rules: {err}") from err
 
@@ -344,7 +360,7 @@ class ClashServicesSetup:
         read_line = service_call.data.get(API_READ_LINE, 0)
         params = to_dict(service_call.data.get(API_PARAMS, "") or "")
         data = to_dict(service_call.data.get(API_DATA, "") or "")
-        
+
         try:
             response = await coordinator.api.async_request(
                 method=method,
@@ -352,11 +368,9 @@ class ClashServicesSetup:
                 params=params,
                 json_data=data,
                 read_line=read_line,
-                suppress_errors=False
+                suppress_errors=False,
             )
         except Exception as err:
             raise HomeAssistantError(f"Error performing API call: {err}") from err
-        
+
         return {"response": response}
-
-

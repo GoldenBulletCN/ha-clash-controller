@@ -37,10 +37,22 @@
       }
     },
     "entity": {
-        "select":{
+        "button":{
           "flush_cache": {
             "name": "Flush FakeIP Cache"
           }
+        },
+        "select":{
+            "mode_selector": {
+                "name": "Mode"
+            }
+        },
+        "selector": {
+            "mode_options": {
+                "rule": "Rule",
+                "global": "Global",
+                "direct": "Direct"
+            }
         },
         "sensor": {
           "up_speed": {
