@@ -4,7 +4,7 @@ import logging
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -27,6 +27,7 @@ async def async_setup_entry(
 
     select_types = {
         "proxy_group_selector": GroupSelect,
+        "mode_selector": ModeSelect,
     }
 
     selects = [
@@ -34,7 +35,6 @@ async def async_setup_entry(
         for entity_data in coordinator.data
         if (entity_type := entity_data.get("entity_type")) in select_types
     ]
-    selects.append(ModeSelect(coordinator, {}))
     async_add_entities(selects)
 
 
@@ -79,20 +79,27 @@ class GroupSelect(SelectEntityBase):
         self.async_write_ha_state()
 
 
-class ModeSelect(CoordinatorEntity, SelectEntity):
+class ModeSelect(SelectEntityBase):
     """Implementation of a mode select."""
 
     def __init__(
         self, coordinator: ClashControllerCoordinator, entity_data: dict
     ) -> None:
         """Initialize the mode select entity."""
-        self._attr_name = "Mode Selector"
-        self._attr_icon = "mdi:format-list-bulleted-type"
-        self._attr_options = ["rule", "global", "direct"]
-        self._attr_translation_key = "mode_selector"
+        # self._attr_name = "Mode Selector"
+        # self._attr_icon = "mdi:format-list-bulleted-type"
+        # self._attr_options = ["rule", "global", "direct"]
+        # self._attr_translation_key = "mode_selector"
         self._attr_option_translation_key = "mode_options"
-        self._attr_current_option = "rule"
-        super().__init__(coordinator)
+        # self._attr_current_option = "rule"
+        super().__init__(coordinator, entity_data)
+
+    # @callback
+    # def _handle_coordinator_update(self) -> None:
+    #     self.entity_data = (
+    #         self.coordinator.get_data_by_name(self.entity_data.get("name")) or {}
+    #     )
+    #     self.async_write_ha_state()
 
     @property
     def current_option(self) -> str | None:
@@ -107,4 +114,5 @@ class ModeSelect(CoordinatorEntity, SelectEntity):
             )
         except Exception as err:
             raise HomeAssistantError(f"Failed to set mode to {mode}.") from err
+        self.entity_data["state"] = option
         self.async_write_ha_state()

@@ -83,6 +83,7 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
         connections = response.get("connections", {})
         memory = response.get("memory", {})
         proxies = response.get("proxies", {})
+        mode = response.get("configs", {})["mode"]
 
         entity_data = [
             {
@@ -138,6 +139,17 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
                 },
             },
         ]
+
+        entity_data.append(
+            {
+                "name": "Mode",
+                "state": mode,
+                "entity_type": "mode_selector",
+                "icon": "mdi:network-outline",
+                "options": ["global", "rule", "direct"],
+                "translation_key": "mode_selector",
+            }
+        )
         group_selector_items = ["tfo", "type", "udp", "xudp", "alive", "history"]
         group_sensor_items = group_selector_items + ["all"]
 

@@ -6,7 +6,6 @@ import logging
 import random
 import re
 import ssl
-import time
 from typing import Optional
 
 import aiohttp
@@ -73,6 +72,7 @@ class ClashAPI:
                 line_counter += 1
                 if line_counter == read_line:
                     return json.loads(line.decode("utf-8").strip())
+            return None
 
         if self._session is None:
             await self._establish_session()
@@ -247,6 +247,7 @@ class ClashAPI:
             ("traffic", {"read_line": 1}),
             ("connections", {}),
             ("proxies", {}),
+            ("configs", {}),
         ]
         results = await asyncio.gather(
             *[
