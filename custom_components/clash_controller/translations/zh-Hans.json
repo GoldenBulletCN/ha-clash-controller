@@ -44,14 +44,12 @@
         },
         "select":{
             "mode_selector": {
-                "name": "模式"
-            }
-        },
-        "selector": {
-            "mode_options": {
-                "rule": "规则",
-                "global": "全局",
-                "direct": "直连"
+                "name": "模式",
+                "state": {
+                    "rule": "规则",
+                    "global": "全局",
+                    "direct": "直连"
+                }
             }
         },
         "sensor": {

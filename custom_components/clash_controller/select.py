@@ -90,7 +90,6 @@ class ModeSelect(SelectEntityBase):
         # self._attr_icon = "mdi:format-list-bulleted-type"
         # self._attr_options = ["rule", "global", "direct"]
         # self._attr_translation_key = "mode_selector"
-        self._attr_option_translation_key = "mode_options"
         # self._attr_current_option = "rule"
         super().__init__(coordinator, entity_data)
 

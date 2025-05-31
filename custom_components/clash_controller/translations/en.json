@@ -44,14 +44,15 @@
         },
         "select":{
             "mode_selector": {
-                "name": "Mode"
-            }
-        },
-        "selector": {
+                "name": "Mode",
+                "state": {
+                    "rule": "Rule",
+                    "global": "Global",
+                    "direct": "Direct"
+                }
+            },
             "mode_options": {
-                "rule": "Rule",
-                "global": "Global",
-                "direct": "Direct"
+
             }
         },
         "sensor": {
