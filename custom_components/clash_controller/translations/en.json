@@ -71,7 +71,7 @@
           "memory_used": {
             "name": "Memory Used"
           },
-          "connection_sensor": {
+          "connection_number": {
             "name": "Connection Number"
           },
           "netflix_service": {

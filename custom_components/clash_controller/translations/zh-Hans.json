@@ -68,7 +68,7 @@
           "memory_used": {
             "name": "内存占用"
           },
-          "connection_sensor": {
+          "connection_number": {
             "name": "连接数"
           },
           "netflix_service": {
