@@ -50,7 +50,7 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
         self.api = ClashAPI(
             host=self.host, token=self.token, allow_unsafe=self.allow_unsafe
         )
-        _LOGGER.debug(f"Clash API initialized for coordinator {self.name}")
+        _LOGGER.debug("Clash API initialized for coordinator %s", self.name)
 
     async def _get_device(self) -> DeviceInfo:
         """Generate a device object."""
@@ -192,3 +192,48 @@ class ClashControllerCoordinator(DataUpdateCoordinator):
     def get_data_by_name(self, name: str) -> dict | None:
         """Retrieve data by name."""
         return next((item for item in self.data if item["name"] == name), None)
+
+
+class ClashCoordinator(DataUpdateCoordinator):
+    """A coordinator to fetch data from the Clash API."""
+
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry) -> None:
+        """Initialize the Clash Coordinator."""
+        self.api = ClashAPI(
+            host=config_entry.data["api_url"],
+            token=config_entry.data["bearer_token"],
+            allow_unsafe=config_entry.data["allow_unsafe"],
+        )
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=f"{DOMAIN} ({self.api.host})",
+            update_method=self._async_update_data,
+            update_interval=timedelta(
+                seconds=config_entry.options.get(
+                    CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+                )
+            ),
+        )
+        _LOGGER.debug("Clash API initialized for coordinator %s", self.name)
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Fetch data from API endpoint."""
+        try:
+            is_connected = await self.api.connected(suppress_errors=False)
+            if not is_connected:
+                raise UpdateFailed("API not connected")
+            response = await self.api.fetch_data()
+        except Exception as err:
+            raise UpdateFailed(f"Error communicating with API: {err}") from err
+
+        # Get proxiy_groups
+        proxy_groups = {}
+        proxies = response.get("proxies", {})
+        for item in proxies.get("proxies", {}).values():
+            if item.get("type") in ["Selector", "Fallback"]:
+                proxy_groups[item["name"]] = item
+        # Get mode
+        mode = response.get("configs", {}).get("mode", "unknown")
+
+        return {"proxy_groups": proxy_groups, "mode": mode}
