@@ -53,39 +53,23 @@
             }
         },
         "sensor": {
-          "up_speed": {
+          "upload_speed": {
             "name": "上传速度"
           },
-          "down_speed": {
+          "download_speed": {
             "name": "下载速度"
           },
-          "up_traffic": {
-            "name": "上传流量"
+          "upload_total": {
+            "name": "上传总量"
           },
-          "down_traffic": {
-            "name": "下载流量"
+          "download_total": {
+            "name": "下载总量"
           },
-          "memory_used": {
-            "name": "内存占用"
+          "memory_usage": {
+            "name": "内存使用"
           },
-          "connection_number": {
-            "name": "连接数"
-          },
-          "netflix_service": {
-            "name": "Netflix",
-            "state":{
-                "unlocked": "已解锁",
-                "blocked": "未解锁",
-                "original_only": "仅限原创"
-            },
-            "state_attributes":{
-                "latency": {
-                    "name": "延迟"
-                },
-                "status_code": {
-                    "name": "状态码"
-                }
-            }
+          "active_connections": {
+            "name": "活动连接数"
           }
         }
     },

@@ -20,7 +20,7 @@ from .const import (
     GET_RULE_SERVICE_NAME,
     REBOOT_CORE_SERVICE_NAME,
 )
-from .coordinator import ClashControllerCoordinator
+from .dispatcher import ClashControllerCoordinator
 
 HOST_KEYWORD = "host"
 SRC_HOSTNAME_KEYWORD = "src_hostname"

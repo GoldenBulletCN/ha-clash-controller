@@ -1,54 +1,84 @@
-"""Base entity for Clash Controller."""
+"""Base entity for Clash."""
 
-import logging
+from abc import ABC, abstractmethod
+from collections.abc import Callable
 
-from homeassistant.core import callback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.entity import Entity
 
-from .coordinator import ClashControllerCoordinator
+from .const import DOMAIN
+from .dispatcher import ClashDispatcher
 
-_LOGGER = logging.getLogger(__name__)
 
+class BaseEntity(Entity):
+    """Base entity for Clash Controller using dispatcher."""
 
-class BaseEntity(CoordinatorEntity):
-    """Base entity class."""
-
-    coordinator: ClashControllerCoordinator
-    _attr_has_entity_name = True
+    _unsub_dispatcher: Callable[[], None] | None
+    dispatcher: ClashDispatcher
+    _signal: str
 
     def __init__(
-        self, coordinator: ClashControllerCoordinator, entity_data: dict
+        self, dispatcher: ClashDispatcher, entry: ConfigEntry, signal: str
     ) -> None:
-        super().__init__(coordinator)
-        self.entity_data = entity_data
-        self._attr_device_info = self.coordinator.device
+        """Initialize the base entity."""
+        super().__init__()
+        self._unsub_dispatcher = None
+        self.dispatcher = dispatcher
+        self._signal = signal
+        self._attr_device_info = DeviceInfo(identifiers={(DOMAIN, entry.entry_id)})
+        self._attr_has_entity_name = True
 
-        if (
-            entity_data.get("entity_type") == "proxy_group_selector"
-            or entity_data.get("entity_type") == "proxy_group_sensor"
-        ):
-            self._attr_name = self.entity_data.get("name")
-
-        self._attr_unique_id = self.entity_data.get("unique_id")
-        self._attr_icon = self.entity_data.get("icon")
-
-        _LOGGER.debug(
-            f"Entity {self.entity_data.get('name')} ({self._attr_unique_id}) initialized."
+    async def async_added_to_hass(self) -> None:
+        """Register dispatcher to update entity when data changes."""
+        self._unsub_dispatcher = async_dispatcher_connect(
+            self.hass,
+            self._signal,
+            self._handle_dispatcher_update,
         )
 
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        self.entity_data = (
-            self.coordinator.get_data_by_name(self.entity_data.get("name")) or {}
-        )
+    async def async_will_remove_from_hass(self) -> None:
+        """Unregister dispatcher."""
+        if self._unsub_dispatcher is not None:
+            self._unsub_dispatcher()
+            self._unsub_dispatcher = None
+
+    async def _handle_dispatcher_update(self) -> None:
+        """Handle dispatcher signal to update entity state."""
         self.async_write_ha_state()
 
-    @property
-    def extra_state_attributes(self):
-        """Default extra state attributes for base sensor."""
-        return self.entity_data.get("attributes", None)
 
-    @property
-    def translation_key(self):
-        """Default translation_key for base sensor."""
-        return self.entity_data.get("translation_key", None)
+class BaseManager(ABC):
+    """Base manager for Clash entities."""
+
+    _unsub_dispatcher: Callable[[], None] | None
+    dispatcher: ClashDispatcher
+    _signal: str
+    hass: HomeAssistant | None
+    entry: ConfigEntry | None
+
+    def __init__(
+        self, dispatcher: ClashDispatcher, entry: ConfigEntry, signal: str
+    ) -> None:
+        """Initialize the base manager."""
+        self._unsub_dispatcher = None
+        self.dispatcher = dispatcher
+        self._signal = signal
+        self.entry = entry
+        self.hass = None
+
+    def register_manager(self, hass: HomeAssistant) -> None:
+        """Register the manager with Home Assistant."""
+        self.hass = hass
+        self._unsub_dispatcher = async_dispatcher_connect(
+            self.hass,
+            self._signal,
+            self._handle_dispatcher_update,
+        )
+        self.entry.async_on_unload(self._unsub_dispatcher)
+
+    @abstractmethod
+    async def _handle_dispatcher_update(self) -> None:
+        """Handle dispatcher update signal."""

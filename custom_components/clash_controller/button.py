@@ -9,7 +9,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .base import BaseEntity
 from .const import DOMAIN
-from .coordinator import ClashControllerCoordinator
+from .dispatcher import ClashDispatcher
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -19,9 +19,7 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):
-    coordinator: ClashControllerCoordinator = hass.data[DOMAIN][
-        config_entry.entry_id
-    ].coordinator
+    coordinator: ClashDispatcher = hass.data[DOMAIN][config_entry.entry_id].coordinator
 
     button_types = {
         "fakeip_flush_button": ButtonEntityBase,

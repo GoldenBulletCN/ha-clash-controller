@@ -53,39 +53,23 @@
             }
         },
         "sensor": {
-          "up_speed": {
+          "upload_speed": {
             "name": "Upload Speed"
           },
-          "down_speed": {
+          "download_speed": {
             "name": "Download Speed"
           },
-          "up_traffic": {
-            "name": "Upload Traffic"
+          "upload_total": {
+            "name": "Upload Total"
           },
-          "down_traffic": {
-            "name": "Download Traffic"
+          "download_toal": {
+            "name": "Download Total"
           },
-          "memory_used": {
-            "name": "Memory Used"
+          "memory_usage": {
+            "name": "Memory Usage"
           },
-          "connection_number": {
-            "name": "Connection Number"
-          },
-          "netflix_service": {
-            "name": "Netflix",
-            "state":{
-                "unlocked": "Unlocked",
-                "blocked": "Blocked",
-                "original_only": "Original Only"
-            },
-            "state_attributes":{
-                "latency": {
-                    "name": "Latency"
-                },
-                "status_code": {
-                    "name": "Status Code"
-                }
-            }
+          "active_connections": {
+            "name": "Active Connections"
           }
         }
     },
